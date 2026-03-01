@@ -2,34 +2,110 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Текстовый файл</title>
+    <title>Компактный текст для PDF</title>
     <style>
-        body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; }
-        #text-area {
-            width: 100%;
-            height: 90vh; /* Почти на весь экран */
-            background: #252526;
-            color: #d4d4d4;
-            border: 1px solid #333;
-            padding: 15px;
-            font-size: 14px;
-            resize: none; /* Запрет растягивания мышкой, так как оно само адаптируется */
+        /* Базовые стили для экрана */
+        body {
+            font-family: 'Arial Narrow', Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
         }
-        .controls { margin-bottom: 10px; }
-        button { padding: 10px 20px; cursor: pointer; background: #007acc; color: white; border: none; border-radius: 4px; font-size: 16px;}
-        button:hover { background: #005f9e; }
+
+        /* Панель управления (скроется при печати) */
+        .controls {
+            background: #333;
+            color: white;
+            padding: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .controls button {
+            background: #28a745;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+
+        .controls input[type="range"] {
+            width: 200px;
+        }
+
+        /* Область для текста */
+        #content-area {
+            background: white;
+            color: black;
+            padding: 20px;
+            margin-top: 60px; /* Отступ для панели */
+            white-space: pre-wrap; /* Сохраняет абзацы */
+            text-align: justify;
+        }
+
+        /* 
+           САМОЕ ВАЖНОЕ: Настройки для Печати / PDF 
+           Здесь происходит магия сжатия
+        */
+        @media print {
+            /* Скрываем кнопки и ползунки */
+            .controls { display: none !important; }
+            
+            @page {
+                /* Минимальные отступы по краям листа (5 мм) */
+                margin: 5mm; 
+                size: A4;
+            }
+
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+                /* Принудительно используем узкий шрифт для экономии места */
+                font-family: 'Arial Narrow', 'Roboto Condensed', sans-serif !important;
+            }
+
+            #content-area {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                
+                /* ГАЗЕТНАЯ ВЕРСТКА: 4 колонки текста */
+                column-count: 4; 
+                column-gap: 3mm; /* Расстояние между колонками */
+                column-rule: 0.5px solid #ccc; /* Линия между колонками */
+                
+                /* Размер шрифта будет управляться через JS или стоять по умолчанию */
+                font-size: 6pt; /* Старт с очень мелкого */
+                line-height: 1.1; /* Плотные строки */
+            }
+        }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <button onclick="copyAll()">Скопировать всё</button>
+        <button onclick="window.print()">🖨 Сохранить в PDF (Ctrl+P)</button>
+        
+        <label>Размер шрифта: <span id="fs-val">6</span>pt</label>
+        <!-- Ползунок от 3pt (микроскоп) до 10pt -->
+        <input type="range" min="3" max="10" step="0.1" value="6" oninput="changeFontSize(this.value)">
+        
+        <label>Колонок: <span id="col-val">4</span></label>
+        <input type="range" min="1" max="6" step="1" value="4" oninput="changeColumns(this.value)">
     </div>
 
-    <!-- Используем textarea, так как в него проще всего вставить огромный текст без ошибок HTML -->
-    <textarea id="text-area" readonly>
-<!-- ВСТАВЬ СВОЙ ТЕКСТ НИЖЕ ЭТОЙ СТРОКИ -->
-
+    <!-- Сюда вставь текст -->
+    <div id="content-area">
 user:
 
 Ты профессиональный senior-разработчик Roblox, архитектор production-уровня, эксперт по Lua, клиент-серверной архитектуре, анимации, UI, визуальным и аудиоэффектам, психологическому хоррору, построению напряжения и динамики страха.
@@ -16693,20 +16769,23 @@ end)
 
 print("[RadioUI] Radio Client UI System initialized — [R] to toggle, scroll/drag to tune, [G] to decode")
 ```
-
-<!-- ВСТАВЬ СВОЙ ТЕКСТ ВЫШЕ ЭТОЙ СТРОКИ -->
-    </textarea>
+    </div>
 
     <script>
-        function copyAll() {
-            const copyText = document.getElementById("text-area");
-            copyText.select();
-            copyText.setSelectionRange(0, 999999); /* Для мобильных */
-            navigator.clipboard.writeText(copyText.value).then(() => {
-                alert("Текст скопирован в буфер обмена!");
-            });
+        function changeFontSize(val) {
+            document.getElementById('content-area').style.fontSize = val + 'pt';
+            document.getElementById('fs-val').innerText = val;
+        }
+        
+        function changeColumns(val) {
+            document.getElementById('content-area').style.columnCount = val;
+            document.getElementById('col-val').innerText = val;
+        }
+
+        // Устанавливаем начальное значение при загрузке
+        window.onload = function() {
+            changeFontSize(6);
         }
     </script>
-
 </body>
 </html>
